@@ -15,8 +15,10 @@ button_frame.pack(expand=True)
 button_width = 20
 button_height = 3
 
-# Main variable for the capturing state
+# Main variables for the capturing state
 is_capturing = False
+cancel_commercial_capture = False
+cancel_game_capture = False
 minimize_after_capture = True
 
 
@@ -44,13 +46,18 @@ def capture_full_screen(directory):
     print(f"Screenshot saved as: {filename}")
 
 def capture_commercial_loop():
+    if cancel_commercial_capture:
+        return
     if is_capturing:
         capture_full_screen("training_data/commercials")
         window.after(3000, capture_commercial_loop)  # Schedule next capture
 
 def handle_capture_commercial_press():
+    try_stop_capture()
     global is_capturing
     is_capturing = True
+    global cancel_commercial_capture
+    cancel_commercial_capture = False
     capture_commercial_button.config(state="disabled")
     capture_game_button.config(state="disabled")
     capture_commercial_button.config(bg="green")
@@ -59,13 +66,18 @@ def handle_capture_commercial_press():
     capture_commercial_loop()  # Start the loop
 
 def capture_game_loop():
+    if cancel_game_capture:
+        return
     if is_capturing:
         capture_full_screen("training_data/game")
         window.after(5000, capture_game_loop)
 
 def handle_capture_game_press():
+    try_stop_capture()
     global is_capturing
     is_capturing = True
+    global cancel_game_capture
+    cancel_game_capture = False
     capture_commercial_button.config(state="disabled")
     capture_game_button.config(state="disabled")
     capture_game_button.config(bg="green")
@@ -73,18 +85,20 @@ def handle_capture_game_press():
         window.after(1000, window.iconify)  # Minimize after 1 second
     capture_game_loop()
 
-def stop_capture():
+def try_stop_capture():
     global is_capturing
     is_capturing = False
+    global cancel_game_capture
+    cancel_game_capture = True
+    global cancel_commercial_capture
+    cancel_commercial_capture = True
     capture_commercial_button.config(state="normal")
     capture_game_button.config(state="normal")
-    capture_commercial_button.config(bg="SystemButtonFace")
-    capture_game_button.config(bg="SystemButtonFace")
+    capture_commercial_button.config(bg="gray")
+    capture_game_button.config(bg="gray")
 
 def on_window_deiconify(event):
-    global is_capturing
-    if is_capturing:
-        stop_capture()
+    try_stop_capture()
 
 window.bind("<Map>", on_window_deiconify)
 
