@@ -2,12 +2,13 @@ import tkinter as tk
 import os
 import datetime
 from PIL import ImageGrab
+from screeninfo import get_monitors
 
 
 # Create the main window
 window = tk.Tk()
 window.title("Data Capture")
-window.geometry("200x200")
+window.geometry("200x300")
 
 # Create a frame to hold the buttons and space them evenly
 button_frame = tk.Frame(window)
@@ -20,8 +21,7 @@ button_height = 3
 is_capturing = False
 
 
-
-
+# Capturing:
 def capture_full_screen(directory):
     """
     Captures a full screenshot using Pillow and saves it with timestamp
@@ -30,8 +30,11 @@ def capture_full_screen(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
+    # Get Bounding Box
+    bbox = get_selected_monitor_bbox()
+
     # Capture the entire screen
-    screenshot = ImageGrab.grab()
+    screenshot = ImageGrab.grab(bbox=bbox)
 
     # Generate filename with timestamp
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -87,6 +90,25 @@ def on_window_deiconify(event):
 
 window.bind("<Map>", on_window_deiconify)
 
+# Monitor Helpers:
+def get_monitor_names(monitors):
+    main_monitor_name = ""
+    monitor_names = []
+    for monitor in monitors:
+        if (monitor.is_primary == True):
+            main_monitor_name = monitor.name
+        monitor_names.append(monitor.name)
+    
+    return monitor_names, main_monitor_name
+
+def get_selected_monitor_bbox():
+    monitors = get_monitors()
+    for monitor in monitors:
+        if (monitor.name == monitor_selection.get()):
+            return (monitor.x, monitor.y, monitor.x + monitor.width, monitor.y + monitor.height)
+    
+    raise Exception("Could not find monitor to calculate bounding box.")
+
 # Display Elements:
 
 capture_commercial_button = tk.Button(
@@ -105,7 +127,18 @@ capture_game_button = tk.Button(
     width=button_width,
     height=button_height
 )
-capture_game_button.pack(pady=5)  # Vertical spacing between buttons
+capture_game_button.pack(pady=5)  # Vertical spacing between buttons 
+
+monitor_selection_label = tk.Label(window, text="Select Which Monitor To Capture").pack()
+
+monitors = get_monitors()
+monitor_names, main_monitor_name = get_monitor_names(monitors)
+monitor_selection = tk.StringVar(value=main_monitor_name)
+monitor_selection_dropdown = tk.OptionMenu(
+    window,
+    monitor_selection, 
+    *monitor_names
+).pack()
 
 info_label = tk.Label(
     window,
